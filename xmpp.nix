@@ -1,8 +1,9 @@
 let
+  publicHTTPPort = 80;
   kibanaPort = 5601;
-  kibanaOauthProxyPort = 4180;
+  kibanaOAuthProxyPort = 4180;
   netdataPort = 19999;
-  netdataOauthProxyPort = 4181;
+  netdataOAuthProxyPort = 4181;
   elasticsearchPort = 9200;
   journalbeatConfig = {
     enable = true;
@@ -27,12 +28,11 @@ in
   network.description = "XMPP server";
 
   xmpp = { config, pkgs, ...}: {
-    networking.firewall.enable = false;
+    networking.firewall.allowedTCPPorts = [ publicHTTPPort ];
     containers = {
       xmpp = {
         autoStart = true;
         config = { config, pkgs, ... }: {
-          networking.firewall.enable = false;
           services.ejabberd.enable = true;
           services.journalbeat = journalbeatConfig;
         };
@@ -41,7 +41,6 @@ in
       kibana = {
         autoStart = true;
         config = { config, pkgs, ...}: {
-          networking.firewall.enable = false;
           services.elasticsearch = {
             enable = true;
             package = pkgs.elasticsearch5;
@@ -63,7 +62,7 @@ in
             cookie.secret = "9abe293e5592432f9a1bb7fd2df18b02e42cea6935f2d";
             cookie.secure = false;
             email.domains = [ "*" ];
-            httpAddress = "http://0.0.0.0:${toString kibanaOauthProxyPort}";
+            httpAddress = "http://0.0.0.0:${toString kibanaOAuthProxyPort}";
             upstream = "http://localhost:${toString kibanaPort}";
           };
         };
@@ -72,7 +71,6 @@ in
       netdata = {
         autoStart = true;
         config = { config, pkgs, ... }: {
-          networking.firewall.enable = false;
           services.journalbeat = journalbeatConfig;
           services.netdata = {
             enable = true;
@@ -90,7 +88,7 @@ in
             cookie.secret = "2d3e06d2ab66275d0e69abe293e5592432f9a1bb7fd2df18b02e42cea6935f2d";
             cookie.secure = false;
             email.domains = [ "*" ];
-            httpAddress = "http://0.0.0.0:${toString netdataOauthProxyPort}";
+            httpAddress = "http://0.0.0.0:${toString netdataOAuthProxyPort}";
             upstream = "http://localhost:${toString netdataPort}";
           };
         };
@@ -99,7 +97,6 @@ in
       http = {
         autoStart = true;
         config = { config, pkgs, ...}: {
-          networking.firewall.enable = false;
           services.journalbeat = journalbeatConfig;
           services.nginx = {
             enable = true;
@@ -112,20 +109,20 @@ in
               server_names_hash_bucket_size 64;
 
               server {
-                listen      80;
+                listen      ${toString publicHTTPPort};
                 server_name logs.denkrate-dev.de;
 
                 location / {
-                  proxy_pass http://localhost:${toString kibanaOauthProxyPort};
+                  proxy_pass http://localhost:${toString kibanaOAuthProxyPort};
                 }
               }
 
               server {
-                listen      80;
+                listen      ${toString publicHTTPPort};
                 server_name metrics.denkrate-dev.de;
 
                 location / {
-                  proxy_pass http://localhost:${toString netdataOauthProxyPort};
+                  proxy_pass http://localhost:${toString netdataOAuthProxyPort};
                 }
               }
             '';
