@@ -1,8 +1,6 @@
 let
-  kibanaIP = "192.168.56.103";
   kibanaPort = 5601;
   kibanaOauthProxyPort = 4180;
-  netdataIP = "192.168.56.101";
   netdataPort = 19999;
   netdataOauthProxyPort = 4181;
   elasticsearchPort = 9200;
@@ -21,7 +19,7 @@ let
       output.elasticsearch:
         enabled: true
         template.enabled: false
-        hosts: ["${kibanaIP}:${toString elasticsearchPort}"]
+        hosts: ["localhost:${toString elasticsearchPort}"]
     '';
   };
 in
@@ -29,11 +27,12 @@ in
   network.description = "XMPP server";
 
   xmpp = { config, pkgs, ...}: {
+    networking.firewall.enable = false;
     containers = {
       xmpp = {
         autoStart = true;
         config = { config, pkgs, ... }: {
-          networking.firewall.allowedTCPPorts = [ 5222 ];
+          networking.firewall.enable = false;
           services.ejabberd.enable = true;
           services.journalbeat = journalbeatConfig;
         };
@@ -42,8 +41,7 @@ in
       kibana = {
         autoStart = true;
         config = { config, pkgs, ...}: {
-          networking.firewall.allowedTCPPorts = [ kibanaPort kibanaOauthProxyPort ];
-          # networking.privateIPv4 = kibanaIP;
+          networking.firewall.enable = false;
           services.elasticsearch = {
             enable = true;
             package = pkgs.elasticsearch5;
@@ -74,8 +72,7 @@ in
       netdata = {
         autoStart = true;
         config = { config, pkgs, ... }: {
-          networking.firewall.allowedTCPPorts = [ netdataPort netdataOauthProxyPort];
-          # networking.privateIPv4 = netdataIP;
+          networking.firewall.enable = false;
           services.journalbeat = journalbeatConfig;
           services.netdata = {
             enable = true;
@@ -102,7 +99,7 @@ in
       http = {
         autoStart = true;
         config = { config, pkgs, ...}: {
-          networking.firewall.allowedTCPPorts = [ 80 ];
+          networking.firewall.enable = false;
           services.journalbeat = journalbeatConfig;
           services.nginx = {
             enable = true;
@@ -112,22 +109,24 @@ in
             recommendedTlsSettings = true;
             virtualHosts = {};
             appendHttpConfig = ''
-              server {
-              listen      80;
-              server_name logs.denkrate-dev.de;
-
-              location / {
-              proxy_pass http://${kibanaIP}:${toString kibanaOauthProxyPort};
-              }
-              }
+              server_names_hash_bucket_size 64;
 
               server {
-              listen      80;
-              server_name metrics.denkrate-dev.de;
+                listen      80;
+                server_name logs.denkrate-dev.de;
 
-              location / {
-              proxy_pass http://${netdataIP}:${toString netdataOauthProxyPort};
+                location / {
+                  proxy_pass http://localhost:${toString kibanaOauthProxyPort};
+                }
               }
+
+              server {
+                listen      80;
+                server_name metrics.denkrate-dev.de;
+
+                location / {
+                  proxy_pass http://localhost:${toString netdataOauthProxyPort};
+                }
               }
             '';
           };
