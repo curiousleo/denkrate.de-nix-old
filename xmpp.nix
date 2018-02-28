@@ -30,14 +30,6 @@ in
   xmpp = { config, pkgs, ...}: {
     networking.firewall.allowedTCPPorts = [ publicHTTPPort ];
     containers = {
-      xmpp = {
-        autoStart = true;
-        config = { config, pkgs, ... }: {
-          services.ejabberd.enable = true;
-          services.journalbeat = journalbeatConfig;
-        };
-      };
-
       kibana = {
         autoStart = true;
         config = { config, pkgs, ...}: {
@@ -104,27 +96,20 @@ in
             recommendedOptimisation = true;
             recommendedProxySettings = true;
             recommendedTlsSettings = true;
-            virtualHosts = {};
+            virtualHosts = {
+              "logs.denkrate-dev.de" = {
+                locations."/" = {
+                  proxyPass = "http://localhost:${toString kibanaOAuthProxyPort}";
+                };
+              };
+              "metrics.denkrate-dev.de" = {
+                locations."/" = {
+                  proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
+                };
+              };
+            };
             appendHttpConfig = ''
               server_names_hash_bucket_size 64;
-
-              server {
-                listen      ${toString publicHTTPPort};
-                server_name logs.denkrate-dev.de;
-
-                location / {
-                  proxy_pass http://localhost:${toString kibanaOAuthProxyPort};
-                }
-              }
-
-              server {
-                listen      ${toString publicHTTPPort};
-                server_name metrics.denkrate-dev.de;
-
-                location / {
-                  proxy_pass http://localhost:${toString netdataOAuthProxyPort};
-                }
-              }
             '';
           };
         };
