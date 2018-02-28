@@ -25,9 +25,9 @@ let
   };
 in
 {
-  network.description = "XMPP server";
+  network.description = "Denkrate";
 
-  xmpp = { config, pkgs, ...}: {
+  denkrate = { config, pkgs, ...}: {
     networking.firewall.allowedTCPPorts = [ publicHTTPPort ];
     containers = {
       kibana = {
