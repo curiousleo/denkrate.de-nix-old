@@ -28,7 +28,7 @@ in
   network.description = "Denkrate";
 
   denkrate = { config, pkgs, ...}: {
-    networking.firewall.allowedTCPPorts = [ publicHTTPPort ];
+    networking.firewall.allowedTCPPorts = [ kibanaPort publicHTTPPort ];
     containers = {
       kibana = {
         autoStart = true;
@@ -37,6 +37,7 @@ in
             enable = true;
             package = pkgs.elasticsearch5;
             port = elasticsearchPort;
+            extraJavaOptions = [ "-Xms256m" "-Xmx256m" ];
           };
           services.journalbeat = journalbeatConfig;
           services.kibana = {
@@ -47,8 +48,8 @@ in
           };
           services.oauth2_proxy = {
             enable = true;
-            clientID = "c306667938ce52592a1a";
-            clientSecret = "69b8ef30be9cb1b78e207873dcff190d1ac80d75";
+            clientID = "2e356c103cd8e4647e9c";
+            clientSecret = "5f7da877f4016b80dc8948878aa9d5877d6ac656";
             provider = "github";
             github.org = "denkrate-admin";
             cookie.secret = "9abe293e5592432f9a1bb7fd2df18b02e42cea6935f2d";
@@ -73,8 +74,8 @@ in
           };
           services.oauth2_proxy = {
             enable = true;
-            clientID = "4b22496b65a98f87140e";
-            clientSecret = "8d5cddd2ae899ced42c9871e6f52afef9a9925e9";
+            clientID = "6c0f9128b090d0b23629";
+            clientSecret = "d72c99799375ca8c54bf6fdbfc927e94485f0ce3";
             provider = "github";
             github.org = "denkrate-admin";
             cookie.secret = "2d3e06d2ab66275d0e69abe293e5592432f9a1bb7fd2df18b02e42cea6935f2d";
@@ -85,35 +86,30 @@ in
           };
         };
       };
+    };
 
-      http = {
-        autoStart = true;
-        config = { config, pkgs, ...}: {
-          services.journalbeat = journalbeatConfig;
-          services.nginx = {
-            enable = true;
-            recommendedGzipSettings = true;
-            recommendedOptimisation = true;
-            recommendedProxySettings = true;
-            recommendedTlsSettings = true;
-            virtualHosts = {
-              "logs.denkrate-dev.de" = {
-                locations."/" = {
-                  proxyPass = "http://localhost:${toString kibanaOAuthProxyPort}";
-                };
-              };
-              "metrics.denkrate-dev.de" = {
-                locations."/" = {
-                  proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
-                };
-              };
-            };
-            appendHttpConfig = ''
-              server_names_hash_bucket_size 64;
-            '';
+    services.journalbeat = journalbeatConfig;
+    services.nginx = {
+      enable = true;
+      recommendedGzipSettings = true;
+      recommendedOptimisation = true;
+      recommendedProxySettings = true;
+      recommendedTlsSettings = true;
+      virtualHosts = {
+        "logs.denkrate.de" = {
+          locations."/" = {
+            proxyPass = "http://localhost:${toString kibanaOAuthProxyPort}";
+          };
+        };
+        "metrics.denkrate.de" = {
+          locations."/" = {
+            proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
           };
         };
       };
+      appendHttpConfig = ''
+        server_names_hash_bucket_size 64;
+      '';
     };
   };
 }
