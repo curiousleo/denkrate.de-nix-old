@@ -30,23 +30,23 @@ in
         "logs.denkrate.de" = {
           forceSSL = true;
           enableACME = true;
-          locations."/" = {
-            proxyPass = "http://localhost:${toString journaldHttpGatewayOAuthProxyPort}";
-          };
+          locations."/".proxyPass = "http://localhost:${toString journaldHttpGatewayOAuthProxyPort}";
         };
         "metrics.denkrate.de" = {
           forceSSL = true;
           enableACME = true;
-          locations."/" = {
-            proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
-          };
+          locations."/".proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
         };
         "denkrate.de" = {
-          locations."/" = {
-            extraConfig = ''
-              return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;
-            '';
-          };
+          locations."/".extraConfig = "return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;";
+        };
+        "127.0.0.1" = {
+          listen = [ { addr = "127.0.0.1"; } ];
+          locations."/nginx_status".extraConfig = ''
+            stub_status on;
+            allow 127.0.0.1;
+            deny all;
+          '';
         };
       };
       appendHttpConfig = ''
