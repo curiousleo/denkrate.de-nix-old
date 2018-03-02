@@ -1,4 +1,5 @@
 let
+  publicHttpsPort = 443;
   publicHttpPort = 80;
   journaldHttpGatewayPort = 19531;
   journaldHttpGatewayOAuthProxyPort = 4182;
@@ -10,7 +11,7 @@ in
   network.description = "Denkrate";
 
   denkrate = { config, pkgs, ...}: {
-    networking.firewall.allowedTCPPorts = [ publicHttpPort ];
+    networking.firewall.allowedTCPPorts = [ publicHttpPort publicHttpsPort ];
     services.netdata = {
       enable = true;
       configText = ''
@@ -27,13 +28,24 @@ in
       recommendedTlsSettings = true;
       virtualHosts = {
         "logs.denkrate.de" = {
+          forceSSL = true;
+          enableACME = true;
           locations."/" = {
             proxyPass = "http://localhost:${toString journaldHttpGatewayOAuthProxyPort}";
           };
         };
         "metrics.denkrate.de" = {
+          forceSSL = true;
+          enableACME = true;
           locations."/" = {
             proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
+          };
+        };
+        "denkrate.de" = {
+          locations."/" = {
+            extraConfig = ''
+              return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;
+            '';
           };
         };
       };

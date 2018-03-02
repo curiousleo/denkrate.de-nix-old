@@ -58,7 +58,7 @@
 
   services.longview = {
     enable = true;
-    apiKey = "DCD08016-B4A9-31E0-AF3D162C995EC7C0";
+    apiKey = "DCD07149-BC77-6F80-42B3BE910038DFD2";
   };
 
   # Open ports in the firewall.
