@@ -3,13 +3,25 @@
   acme,
 }:
 let
-  publicHttpsPort = 443;
   publicHttpPort = 80;
+  publicHttpsPort = 443;
   journaldHttpGatewayPort = 19531;
   journaldHttpGatewayOAuthProxyPort = 4182;
   netdataPort = 19999;
   netdataOAuthProxyPort = 4181;
-  elasticsearchPort = 9200;
+  secrets = import ./secrets.nix;
+  oauth2Proxy = { host, listen, upstream } : with secrets.oauth."${host}"; {
+    enable = true;
+    clientID = clientID;
+    clientSecret = clientSecret;
+    provider = "github";
+    github.org = "denkrate-admin";
+    cookie.secret = cookieSecret;
+    cookie.secure = acme;
+    email.domains = [ "*" ];
+    httpAddress = "http://0.0.0.0:${toString listen}";
+    upstream = "http://localhost:${toString upstream}";
+  };
 in
 {
   network.description = "Denkrate";
@@ -29,7 +41,7 @@ in
       allow_guest_access = false;
       enable_registration = false;
       server_name = "matrix.${host}";
-      registration_shared_secret = "secret";
+      registration_shared_secret = secrets.synapse.sharedSecret;
       database_type = "sqlite3";
       extraConfig = ''
         max_upload_size: "50M"
@@ -73,34 +85,20 @@ in
       journaldHttpGatewayOAuth = {
         autoStart = true;
         config = { config, pkgs, ... }: {
-          services.oauth2_proxy = {
-            enable = true;
-            clientID = "2e356c103cd8e4647e9c";
-            clientSecret = "5f7da877f4016b80dc8948878aa9d5877d6ac656";
-            provider = "github";
-            github.org = "denkrate-admin";
-            cookie.secret = "2d3e06d2ab66275d0e69abe293e5592432f9a1bb7fd2df18b02e42cea6935f2d";
-            cookie.secure = false;
-            email.domains = [ "*" ];
-            httpAddress = "http://0.0.0.0:${toString journaldHttpGatewayOAuthProxyPort}";
-            upstream = "http://localhost:${toString journaldHttpGatewayPort}";
+          services.oauth2_proxy = oauth2Proxy {
+            host = "logs.${host}";
+            listen = journaldHttpGatewayOAuthProxyPort;
+            upstream = journaldHttpGatewayPort;
           };
         };
       };
       netdataOAuth = {
         autoStart = true;
         config = { config, pkgs, ... }: {
-          services.oauth2_proxy = {
-            enable = true;
-            clientID = "6c0f9128b090d0b23629";
-            clientSecret = "d72c99799375ca8c54bf6fdbfc927e94485f0ce3";
-            provider = "github";
-            github.org = "denkrate-admin";
-            cookie.secret = "2d3e06d2ab66275d0e69abe293e5592432f9a1bb7fd2df18b02e42cea6935f2d";
-            cookie.secure = false;
-            email.domains = [ "*" ];
-            httpAddress = "http://0.0.0.0:${toString netdataOAuthProxyPort}";
-            upstream = "http://localhost:${toString netdataPort}";
+          services.oauth2_proxy = oauth2Proxy {
+            host = "metrics.${host}";
+            listen = netdataOAuthProxyPort;
+            upstream = netdataPort;
           };
         };
       };
