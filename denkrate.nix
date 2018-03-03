@@ -1,3 +1,7 @@
+{
+  host ? "denkrate.de",
+  acme ? true,
+}:
 let
   publicHttpsPort = 443;
   publicHttpPort = 80;
@@ -24,7 +28,7 @@ in
       enable = true;
       allow_guest_access = false;
       enable_registration = false;
-      server_name = "matrix.denkrate.de";
+      server_name = "matrix.${host}";
       registration_shared_secret = "secret";
       database_type = "sqlite3";
       extraConfig = ''
@@ -38,17 +42,17 @@ in
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
       virtualHosts = {
-        "logs.denkrate.de" = {
-          forceSSL = true;
-          enableACME = true;
+        "logs.${host}" = {
+          forceSSL = acme;
+          enableACME = acme;
           locations."/".proxyPass = "http://localhost:${toString journaldHttpGatewayOAuthProxyPort}";
         };
-        "metrics.denkrate.de" = {
-          forceSSL = true;
-          enableACME = true;
+        "metrics.${host}" = {
+          forceSSL = acme;
+          enableACME = acme;
           locations."/".proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
         };
-        "denkrate.de" = {
+        "${host}" = {
           locations."/".extraConfig = "return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;";
         };
         "127.0.0.1" = {
