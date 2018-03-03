@@ -1,6 +1,6 @@
 {
-  host ? "denkrate.de",
-  acme ? true,
+  host,
+  acme,
 }:
 let
   publicHttpsPort = 443;
