@@ -30,6 +30,15 @@ in
   denkrate = { config, pkgs, ...}: {
     networking.firewall.allowedTCPPorts = [ publicHttpPort publicHttpsPort ];
 
+    security.acme.certs."${host}" = {
+      webroot = "/var/lib/acme/acme-challenge/${host}";
+      extraDomains = {
+        "metrics.${host}" = "/var/lib/acme/acme-challenge/metrics.${host}";
+        "logs.${host}" = "/var/lib/acme/acme-challenge/logs.${host}";
+        "matrix.${host}" = "/var/lib/acme/acme-challenge/matrix.${host}";
+      };
+    };
+
     services.netdata = {
       enable = true;
       configText = ''
@@ -74,18 +83,27 @@ in
       virtualHosts = {
         "logs.${host}" = {
           forceSSL = acme;
-          enableACME = acme;
+          sslCertificate = "/var/lib/acme/logs.${host}/fullchain.pem";
+          sslCertificateKey = "/var/lib/acme/logs.${host}/key.pem";
+          #enableACME = acme;
           locations."/".proxyPass = "http://127.0.0.1:${toString journaldHttpGatewayOAuthProxyPort}";
+          locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge/logs.${host}";
         };
         "metrics.${host}" = {
           forceSSL = acme;
-          enableACME = acme;
+          sslCertificate = "/var/lib/acme/metrics.${host}/fullchain.pem";
+          sslCertificateKey = "/var/lib/acme/metrics.${host}/key.pem";
+          #enableACME = acme;
           locations."/".proxyPass = "http://127.0.0.1:${toString netdataOAuthProxyPort}";
+          locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge/metrics.${host}";
         };
         "matrix.${host}" = {
           forceSSL = acme;
-          enableACME = acme;
+          sslCertificate = "/var/lib/acme/matrix.${host}/fullchain.pem";
+          sslCertificateKey = "/var/lib/acme/matrix.${host}/key.pem";
+          #enableACME = acme;
           locations."/".proxyPass = "http://127.0.0.1:${toString privateSynapsePort}";
+          locations."/.well-known/acme-challenge".root = "/var/lib/acme/acme-challenge/matrix.${host}";
         };
         "${host}" = {
           locations."/".extraConfig = "return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;";
