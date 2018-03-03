@@ -5,6 +5,7 @@
 let
   publicHttpPort = 80;
   publicHttpsPort = 443;
+  privateSynapsePort = 8447;
   journaldHttpGatewayPort = 19531;
   journaldHttpGatewayOAuthProxyPort = 4182;
   netdataPort = 19999;
@@ -12,8 +13,8 @@ let
   secrets = import ./secrets.nix;
   oauth2Proxy = { host, listen, upstream } : with secrets.oauth."${host}"; {
     enable = true;
-    httpAddress = "http://0.0.0.0:${toString listen}";
-    upstream = "http://localhost:${toString upstream}";
+    httpAddress = "http://127.0.0.1:${toString listen}";
+    upstream = "http://127.0.0.1:${toString upstream}";
     provider = "github";
     github.org = "denkrate-admin";
     email.domains = [ "*" ];
@@ -28,11 +29,12 @@ in
 
   denkrate = { config, pkgs, ...}: {
     networking.firewall.allowedTCPPorts = [ publicHttpPort publicHttpsPort ];
+
     services.netdata = {
       enable = true;
       configText = ''
         [global]
-        bind to = 0.0.0.0:${toString netdataPort}
+        bind to = 127.0.0.1:${toString netdataPort}
       '';
     };
     services.journald.enableHttpGateway = true;
@@ -41,8 +43,24 @@ in
       allow_guest_access = false;
       enable_registration = false;
       server_name = "matrix.${host}";
+      public_baseurl = "https://matrix.${host}/";
       registration_shared_secret = secrets.synapse.sharedSecret;
       database_type = "sqlite3";
+      listeners = [
+        {
+          bind_address = "127.0.0.1";
+          port = privateSynapsePort;
+          resources = [
+            {
+              compress = true;
+              names = [ "client" "webclient" ];
+            }
+          ];
+          tls = false;
+          type = "http";
+          x_forwarded = true;
+        }
+      ];
       extraConfig = ''
         max_upload_size: "50M"
       '';
@@ -57,12 +75,17 @@ in
         "logs.${host}" = {
           forceSSL = acme;
           enableACME = acme;
-          locations."/".proxyPass = "http://localhost:${toString journaldHttpGatewayOAuthProxyPort}";
+          locations."/".proxyPass = "http://127.0.0.1:${toString journaldHttpGatewayOAuthProxyPort}";
         };
         "metrics.${host}" = {
           forceSSL = acme;
           enableACME = acme;
-          locations."/".proxyPass = "http://localhost:${toString netdataOAuthProxyPort}";
+          locations."/".proxyPass = "http://127.0.0.1:${toString netdataOAuthProxyPort}";
+        };
+        "matrix.${host}" = {
+          forceSSL = acme;
+          enableACME = acme;
+          locations."/".proxyPass = "http://127.0.0.1:${toString privateSynapsePort}";
         };
         "${host}" = {
           locations."/".extraConfig = "return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;";
