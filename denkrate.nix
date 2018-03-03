@@ -20,6 +20,17 @@ in
       '';
     };
     services.journald.enableHttpGateway = true;
+    services.matrix-synapse = {
+      enable = true;
+      allow_guest_access = false;
+      enable_registration = false;
+      server_name = "matrix.denkrate.de";
+      registration_shared_secret = "secret";
+      database_type = "sqlite3";
+      extraConfig = ''
+        max_upload_size: "50M"
+      '';
+    };
     services.nginx = {
       enable = true;
       recommendedGzipSettings = true;
