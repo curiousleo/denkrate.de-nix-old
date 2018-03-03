@@ -12,15 +12,15 @@ let
   secrets = import ./secrets.nix;
   oauth2Proxy = { host, listen, upstream } : with secrets.oauth."${host}"; {
     enable = true;
-    clientID = clientID;
-    clientSecret = clientSecret;
-    provider = "github";
-    github.org = "denkrate-admin";
-    cookie.secret = cookieSecret;
-    cookie.secure = acme;
-    email.domains = [ "*" ];
     httpAddress = "http://0.0.0.0:${toString listen}";
     upstream = "http://localhost:${toString upstream}";
+    provider = "github";
+    github.org = "denkrate-admin";
+    email.domains = [ "*" ];
+    clientID = clientID;
+    clientSecret = clientSecret;
+    cookie.secret = cookieSecret;
+    cookie.secure = acme;
   };
 in
 {
