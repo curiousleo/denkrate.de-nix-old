@@ -38,33 +38,33 @@ in
       '';
     };
     services.journald.enableHttpGateway = true;
-    services.matrix-synapse = {
-      enable = true;
-      allow_guest_access = false;
-      enable_registration = false;
-      server_name = "matrix.${host}";
-      public_baseurl = "https://matrix.${host}/";
-      registration_shared_secret = secrets.synapse.sharedSecret;
-      database_type = "sqlite3";
-      listeners = [
-        {
-          bind_address = "127.0.0.1";
-          port = privateSynapsePort;
-          resources = [
-            {
-              compress = true;
-              names = [ "client" "webclient" ];
-            }
-          ];
-          tls = false;
-          type = "http";
-          x_forwarded = true;
-        }
-      ];
-      extraConfig = ''
-        max_upload_size: "50M"
-      '';
-    };
+    #services.matrix-synapse = {
+    #  enable = true;
+    #  allow_guest_access = false;
+    #  enable_registration = false;
+    #  server_name = "matrix-internal.${host}";
+    #  public_baseurl = "https://matrix-internal.${host}/";
+    #  registration_shared_secret = secrets.synapse.sharedSecret;
+    #  database_type = "sqlite3";
+    #  listeners = [
+    #    {
+    #      bind_address = "127.0.0.1";
+    #      port = privateSynapsePort;
+    #      resources = [
+    #        {
+    #          compress = true;
+    #          names = [ "client" "webclient" ];
+    #        }
+    #      ];
+    #      tls = false;
+    #      type = "http";
+    #      x_forwarded = true;
+    #    }
+    #  ];
+    #  extraConfig = ''
+    #    max_upload_size: "50M"
+    #  '';
+    #};
     services.nginx = {
       enable = true;
       recommendedGzipSettings = true;
@@ -82,11 +82,11 @@ in
           enableACME = acme;
           locations."/".proxyPass = "http://127.0.0.1:${toString netdataOAuthProxyPort}";
         };
-        "matrix.${host}" = {
-          forceSSL = acme;
-          enableACME = acme;
-          locations."/".proxyPass = "http://127.0.0.1:${toString privateSynapsePort}";
-        };
+        #"chat.${host}" = {
+        #  forceSSL = acme;
+        #  enableACME = acme;
+        #  locations."/".proxyPass = "http://127.0.0.1:${toString privateSynapsePort}";
+        #};
         "${host}" = {
           locations."/".extraConfig = "return 301 https://de.wikipedia.org/wiki/Karl_der_Gro%C3%9Fe;";
         };
